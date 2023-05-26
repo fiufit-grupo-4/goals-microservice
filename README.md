@@ -1,6 +1,6 @@
 ## Goals Microservice
 
-[![codecov](https://codecov.io/gh/fiufit-grupo-4/base-microservice/branch/develop/graph/badge.svg?token=TYSBTIXP4G)](https://codecov.io/gh/fiufit-grupo-4/base-microservice) [![Dev Checks](https://github.com/fiufit-grupo-4/base-microservice/actions/workflows/dev-checks.yml/badge.svg)](https://github.com/fiufit-grupo-4/base-microservice/actions/workflows/dev-checks.yml)
+[![codecov](https://codecov.io/gh/fiufit-grupo-4/goals-microservice/branch/main/graph/badge.svg?token=LhOJKiy6To)](https://codecov.io/gh/fiufit-grupo-4/goals-microservice) [![Dev Checks](https://github.com/fiufit-grupo-4/base-microservice/actions/workflows/dev-checks.yml/badge.svg)](https://github.com/fiufit-grupo-4/base-microservice/actions/workflows/dev-checks.yml)
 
 # Docker
 

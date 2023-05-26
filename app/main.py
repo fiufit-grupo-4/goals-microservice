@@ -12,15 +12,11 @@ dictConfig(logconfig)
 app = FastAPI()
 logger = logging.getLogger('app')
 
-logger.error("Error message! - Level 3")
-logger.warning("Warning message! - Level 2")
-logger.info("Info message! - Level 1")
-logger.debug("Debug message! - Level 0")
-
-
-@app.get("/", tags=["Home"])
-def get_root() -> dict:
-    return {"message": "OK"}
+# Logging examples
+# logger.error("Error message! - Level 3")
+# logger.warning("Warning message! - Level 2")
+# logger.info("Info message! - Level 1")
+# logger.debug("Debug message! - Level 0")
 
 
 @app.on_event("startup")
@@ -33,21 +29,13 @@ async def startup_db_client():
         logger.error(e)
         logger.error("Could not connect to MongoDB")
 
-    # How to build a collection
-    db = app.mongodb_client["example-db"]
-    collection = db.example_collection
+    app.logger = logger
+    # Build a collection
+    app.database = app.mongodb_client["goals_microservice"]
+    # collection = db.goals_microservice
 
-    collection.delete_many({})  # Clear collection data
-
-    # Add data to collection
-    person_1 = {"name": "Agustin", "age": {"$numberInt": "99"}}
-    logger.info("Added object with id: %s", collection.insert_one(person_1).inserted_id)
-    person_2 = {"name": "Alfonso", "age": {"$numberInt": "10"}}
-    logger.info("Added object with id: %s", collection.insert_one(person_2).inserted_id)
-
-    # Check all data in collection
-    for p in collection.find():
-        logger.warning(p)
+    # Clear collection data
+    # collection.delete_many({})
 
 
 @app.on_event("shutdown")

@@ -26,7 +26,9 @@ class ObjectIdPydantic(str):
 def decode_token(token: str) -> dict:
     try:
         settings = get_settings()
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
         return payload
     except Exception:
         raise HTTPException(

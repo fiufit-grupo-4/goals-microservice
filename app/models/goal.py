@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class Goal(BaseModel):
     id: str = Field(..., alias="_id")
     metric: str
@@ -15,6 +16,6 @@ class Goal(BaseModel):
                 "metric": "distancia",
                 "state": "INICIADA",
                 "training_id": "609c97f3a85e2101a9b14b57",
-                "user_id": "609c962ba85e2101a9b14b55"
+                "user_id": "609c962ba85e2101a9b14b55",
             }
         }

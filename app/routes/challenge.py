@@ -7,9 +7,11 @@ router_challenge = APIRouter()
 
 
 @router_challenge.post("/", response_model=ChallengeResponse)
-async def create_challenge(request: Request,
-                           challenge: ChallengeCreate,
-                           authorization: str = Depends(get_token_from_header)):
+async def create_challenge(
+    request: Request,
+    challenge: ChallengeCreate,
+    authorization: str = Depends(get_token_from_header),
+):
     challenges = request.app.database["challenges"]
     # Obtener el ID del usuario del token
     user_id = decode_token(authorization)["id"]
@@ -23,7 +25,7 @@ async def create_challenge(request: Request,
         "limit_time": challenge.limit_time or None,
         "state": "NO_INICIADA",
         "list_multimedia": [],
-        "list_goals": []
+        "list_goals": [],
     }
     challenge_id = await challenges.insert_one(new_challenge)
 
@@ -37,7 +39,7 @@ async def create_challenge(request: Request,
         limit_time=challenge.limit_time,
         state="NO_INICIADA",
         list_multimedia=[],
-        list_goals=[]
+        list_goals=[],
     )
 
     return response

@@ -25,6 +25,7 @@ class ChallengeResponse(BaseModel):
     list_multimedia: List[str] = []
     list_goals: List[str] = []
 
+
 class Challenge(BaseModel):
     id: ObjectIdPydantic
     user_id: ObjectIdPydantic
@@ -48,6 +49,6 @@ class Challenge(BaseModel):
                 "limit": "2023-12-31",
                 "multimedia": [],
                 "state": "INICIADA",
-                "goals": ["603e3a4f5fc3ab182c67b2fa", "603e3a5a5fc3ab182c67b2fb"]
+                "goals": ["603e3a4f5fc3ab182c67b2fa", "603e3a5a5fc3ab182c67b2fb"],
             }
         }

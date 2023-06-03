@@ -1,10 +1,15 @@
-from typing import List
-from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import List, Optional
+from enum import Enum
+from typing import Optional
 from pydantic import BaseModel
 
 from app.auth.auth_utils import ObjectIdPydantic
+
+
+class State(Enum):
+    NOT_INIT = 1
+    INIT = 2
+    COMPLETE = 3
 
 
 class ChallengeCreate(BaseModel):
@@ -15,27 +20,38 @@ class ChallengeCreate(BaseModel):
 
 
 class ChallengeResponse(BaseModel):
-    id: str
-    user_id: str
+    user_id: ObjectIdPydantic
     title: str
     description: str
     metric: str
     limit_time: Optional[datetime] = None
     state: str
-    list_multimedia: List[str] = []
-    list_goals: List[str] = []
+    list_multimedia: list[str]
+    list_goals: Optional[list[str]]
+
+
+class UpdateChallenge(BaseModel):
+    description: Optional[str] = None
+    multimedia: list[str] = []
 
 
 class Challenge(BaseModel):
-    id: ObjectIdPydantic
-    user_id: ObjectIdPydantic
-    title: str
-    description: str
-    metric: str
-    limit: str = None
-    multimedia: List[str] = []
-    state: str = "NO_INICIADA"
-    goals: List[str] = []
+    def __init__(
+        self,
+        user_id,
+        title,
+        description,
+        metric,
+        limit,
+    ):
+        self.user_id = user_id
+        self.title = title
+        self.description = description
+        self.metric = metric
+        self.limit = limit
+        self.multimedia = []
+        self.state = State.NOT_INIT
+        self.goals = []
 
     class Config:
         allow_population_by_field_name = True
@@ -48,7 +64,7 @@ class Challenge(BaseModel):
                 "metric": "distancia",
                 "limit": "2023-12-31",
                 "multimedia": [],
-                "state": "INICIADA",
+                "state": "INIT",
                 "goals": ["603e3a4f5fc3ab182c67b2fa", "603e3a5a5fc3ab182c67b2fb"],
             }
         }

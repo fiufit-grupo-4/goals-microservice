@@ -1,9 +1,33 @@
 from typing import List
 from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import List, Optional
+from pydantic import BaseModel
+
+from app.auth.auth_utils import ObjectIdPydantic
+
+
+class ChallengeCreate(BaseModel):
+    title: str
+    description: str
+    metric: str
+    limit_time: Optional[datetime] = None
+
+
+class ChallengeResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    description: str
+    metric: str
+    limit_time: Optional[datetime] = None
+    state: str
+    list_multimedia: List[str] = []
+    list_goals: List[str] = []
 
 class Challenge(BaseModel):
-    id: str = Field(..., alias="_id")
-    user_id: str
+    id: ObjectIdPydantic
+    user_id: ObjectIdPydantic
     title: str
     description: str
     metric: str

@@ -1,22 +1,16 @@
 from fastapi import FastAPI
-from app.controller_example import router as example_router
 import pymongo
 import logging
 from logging.config import dictConfig
 from .log_config import logconfig
 from os import environ
+from .urls import api_router
 
 MONGODB_URI = environ["MONGODB_URI"]
 
 dictConfig(logconfig)
 app = FastAPI()
 logger = logging.getLogger('app')
-
-# Logging examples
-# logger.error("Error message! - Level 3")
-# logger.warning("Warning message! - Level 2")
-# logger.info("Info message! - Level 1")
-# logger.debug("Debug message! - Level 0")
 
 
 @app.on_event("startup")
@@ -44,4 +38,4 @@ async def shutdown_db_client():
     logger.info("Shutdown APP")
 
 
-app.include_router(example_router)
+app.include_router(api_router)

@@ -48,7 +48,7 @@ async def create_challenge(
     return response
 
 
-@router.patch("/{id_challenge}")
+@router_challenge.patch("/{id_challenge}")
 async def update_challenge(
     request: Request, id_challenge: str, update_data: UpdateChallenge
 ):

@@ -1,10 +1,15 @@
-import os
+import logging
+from logging.config import dictConfig
+from os import environ
 from pydantic import BaseSettings
 
+from app.log_config import logconfig
 
+dictConfig(logconfig)
+logger = logging.getLogger('app')
 class Settings(BaseSettings):
-    jwt_secret: str = os.getenv("JWT_SECRET", "develop")
-    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    jwt_secret: str = environ.get("JWT_SECRET", "123456")
+    jwt_algorithm: str = environ.get("JWT_ALGORITHM", "HS256")
 
     class Config:
         env_file = ".env"

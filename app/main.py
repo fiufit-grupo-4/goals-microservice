@@ -1,16 +1,12 @@
 from fastapi import FastAPI
 import pymongo
-import logging
-from logging.config import dictConfig
-from .log_config import logconfig
 from os import environ
+
+from .config import logger
 from .urls import api_router
 
 MONGODB_URI = environ["MONGODB_URI"]
-
-dictConfig(logconfig)
 app = FastAPI()
-logger = logging.getLogger('app')
 
 
 @app.on_event("startup")

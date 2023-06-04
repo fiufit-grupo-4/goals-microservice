@@ -17,8 +17,8 @@ router_challenge = APIRouter()
 async def create_challenge(
     request: Request,
     challenge: ChallengeCreate,
-    user_id: str,
-    # user_id: ObjectId = Depends(get_user_id),
+    #user_id: str,
+    user_id: ObjectId = Depends(get_user_id),
 ):
     challenges = request.app.database["challenges"]
 
@@ -133,7 +133,7 @@ async def get_challenge(id_challenge: str, request: Request):
 
 
 @router_challenge.get("/")
-async def get_challenges(request: Request, user_id: Depends(get_user_id)):
+async def get_challenges(request: Request, user_id: ObjectId = Depends(get_user_id)):
     challenges = request.app.database["challenges"]
 
     # Obtener todos los desafíos del atleta

@@ -5,6 +5,8 @@ from app.auth.auth_bearer import JWTBearer
 from app.config import get_settings
 from bson import ObjectId
 
+from app.main import logger
+
 oauth2_scheme = HTTPBearer()
 
 
@@ -26,10 +28,12 @@ class ObjectIdPydantic(str):
 
 def get_user_id(token: str = Depends(JWTBearer())) -> ObjectId:
     try:
+        logger.info("token:" + token)
         settings = get_settings()
         payload = jwt.decode(
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
+        logger.info(payload)
         return ObjectId(payload["id"])
     except Exception:
         raise HTTPException(

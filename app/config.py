@@ -7,6 +7,8 @@ from app.log_config import logconfig
 
 dictConfig(logconfig)
 logger = logging.getLogger('app')
+
+
 class Settings(BaseSettings):
     jwt_secret: str = environ.get("JWT_SECRET", "123456")
     jwt_algorithm: str = environ.get("JWT_ALGORITHM", "HS256")

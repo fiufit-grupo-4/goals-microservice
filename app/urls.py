@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.routes.challenge import router_challenge
+from app.routes.goal import router_goal
 
 api_router = APIRouter()
 
@@ -10,6 +10,4 @@ def get_root() -> dict:
     return {"message": "OK"}
 
 
-api_router.include_router(
-    router_challenge, tags=["Athletes Challenges"], prefix="/athletes/me/challenges"
-)
+api_router.include_router(router_goal, tags=["Athletes Goals"], prefix="/goals")

@@ -29,7 +29,9 @@ class ObjectIdPydantic(str):
 def get_user_id(token: str = Depends(JWTBearer())) -> ObjectId:
     try:
         settings = get_settings()
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=settings.jwt_algorithm)
+        payload = jwt.decode(
+            token, settings.jwt_secret, algorithms=settings.jwt_algorithm
+        )
         return ObjectId(payload["id"])
     except Exception:
         raise HTTPException(

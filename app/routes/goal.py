@@ -1,16 +1,20 @@
 from http.client import HTTPException
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
 from fastapi.encoders import jsonable_encoder
+from starlette import status
+from starlette.responses import JSONResponse
 
+from app.config import logger
 from app.models.goal import (
     GoalCreate,
     GoalResponse,
     Goal,
     UpdateGoal,
+    QueryParamFilterGoal,
 )
-from app.auth.auth_utils import get_user_id
+from app.auth.auth_utils import get_user_id, ObjectIdPydantic
 
 router_goal = APIRouter()
 
@@ -30,7 +34,7 @@ async def create_challenge(
         description=goal.description,
         metric=goal.metric,
         limit=goal.limit_time,
-        quantity=goal.quantity
+        quantity=goal.quantity,
     )
     challenge_id = goals.insert_one(jsonable_encoder(new_goal))
 
@@ -45,170 +49,105 @@ async def create_challenge(
         state=new_goal.state,
         list_multimedia=new_goal.multimedia,
         quantity=new_goal.quantity,
-        progress=new_goal.progress
+        progress=new_goal.progress,
     )
 
     return response
 
 
-@router_goal.patch("/{id_challenge}")
+@router_goal.patch("/{id_goal}")
 async def update_challenge(
-    request: Request, id_challenge: str, update_data: UpdateGoal
+    request: Request, id_goal: ObjectIdPydantic, update_data: UpdateGoal
 ):
-    challenges = request.app.database["challenges"]
+    to_change = update_data.dict(exclude_none=True)
+
+    if not to_change or len(to_change) == 0:
+        logger.info('No values specified in body to update')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content='No values specified to update',
+        )
+
+    goals = request.app.database["goals"]
     # Obtener el desafío existente de la base de datos
-    existing_challenge = await challenges.find_one({"_id": ObjectId(id_challenge)})
+    goal = goals.find_one({"_id": id_goal})
 
-    if existing_challenge is None:
-        # El desafío no existe
-        raise HTTPException(status_code=404, detail="Challenge not found")
+    if not goal:
+        logger.info(f'User {id_goal} not found to update')
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=f'User {id_goal} not found',
+        )
 
-    # Actualizar la descripción del desafío si se proporciona
     if update_data.description is not None:
-        existing_challenge["description"] = update_data.description
+        goal["description"] = update_data.description
 
-    # Agregar fotos o videos a la lista multimedia
     if update_data.multimedia:
-        existing_challenge["list_multimedia"].extend(update_data.multimedia)
+        goal["list_multimedia"].extend(update_data.multimedia)
 
-    # Actualizar el desafío en la base de datos
-    await challenges.update_one(
-        {"_id": ObjectId(id_challenge)}, {"$set": existing_challenge}
-    )
+    result_update = goals.update_one({"_id": id_goal}, {"$set": goal})
 
-    # Construir y retornar la respuesta del desafío actualizado
-    response = GoalResponse(
-        id=id_challenge,
-        user_id=existing_challenge["user_id"],
-        title=existing_challenge["title"],
-        description=existing_challenge["description"],
-        metric=existing_challenge["metric"],
-        limit_time=existing_challenge["limit_time"],
-        state=existing_challenge["state"],
-        list_multimedia=existing_challenge["list_multimedia"],
-        list_goals=existing_challenge["list_goals"],
-    )
-    return response
+    if result_update.modified_count > 0:
+        logger.info(f'Updating user {id_goal} a values of {list(to_change.keys())}')
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=f'User {id_goal} updated successfully',
+        )
+    else:
+        logger.info(f'User {id_goal} not updated')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=f'User {id_goal} not updated',
+        )
 
 
-@router_goal.delete("/{id_challenge}")
-async def delete_challenge(id_challenge: str, request: Request):
-    challenges = request.app.database["challenges"]
+@router_goal.delete("/{id_goal}")
+async def delete_challenge(id_goal: ObjectIdPydantic, request: Request):
+    goals = request.app.database["goals"]
+    result = goals.delete_one({"_id": ObjectId(id_goal)})
 
-    # Buscar el desafío en la base de datos
-    existing_challenge = await challenges.find_one({"_id": ObjectId(id_challenge)})
+    if result.deleted_count == 1:
+        logger.info(f'Deleting user {id_goal}')
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=f'User {id_goal} deleted successfully',
+        )
+    else:
+        logger.info(f'User {id_goal} not found to delete')
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=f'User {id_goal} not found to delete',
+        )
 
-    if existing_challenge is None:
-        # El desafío no existe
-        raise HTTPException(status_code=404, detail="Challenge not found")
 
-    # Eliminar el desafío de la base de datos
-    await challenges.delete_one({"_id": ObjectId(id_challenge)})
+@router_goal.get("/{id_goal}")
+async def get_challenge(id_goal: ObjectIdPydantic, request: Request):
+    goals = request.app.database["goals"]
+    goal = goals.find_one({"_id": id_goal})
 
-    # Retornar una respuesta exitosa
-    return {"message": "Challenge deleted successfully"}
-
-
-@router_goal.get("/{id_challenge}")
-async def get_challenge(id_challenge: str, request: Request):
-    challenges = request.app.database["challenges"]
-
-    # Buscar el desafío en la base de datos
-    existing_challenge = await challenges.find_one({"_id": ObjectId(id_challenge)})
-
-    if existing_challenge is None:
-        # El desafío no existe
-        raise HTTPException(status_code=404, detail="Challenge not found")
-
-    # Construir y retornar la respuesta del desafío
-    response = GoalResponse(
-        id=id_challenge,
-        user_id=existing_challenge["user_id"],
-        title=existing_challenge["title"],
-        description=existing_challenge["description"],
-        metric=existing_challenge["metric"],
-        limit_time=existing_challenge["limit_time"],
-        state=existing_challenge["state"],
-        list_multimedia=existing_challenge["list_multimedia"],
-        list_goals=existing_challenge["list_goals"],
-    )
-    return response
+    if goal:
+        return GoalResponse.from_mongo(goal)
+    else:
+        logger.info(f'User {id_goal} not found to get')
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=f'User {id_goal} not found to get',
+        )
 
 
 @router_goal.get("/")
-async def get_challenges(request: Request, user_id: ObjectId = Depends(get_user_id)):
-    challenges = request.app.database["challenges"]
-
-    # Obtener todos los desafíos del atleta
-    all_challenges = await challenges.find({"user_id": user_id}).to_list(None)
-
-    # Construir y retornar la respuesta con todos los desafíos
-    response = [
-        GoalResponse(
-            id=str(challenge["_id"]),
-            user_id=challenge["user_id"],
-            title=challenge["title"],
-            description=challenge["description"],
-            metric=challenge["metric"],
-            limit_time=challenge["limit_time"],
-            state=challenge["state"],
-            list_multimedia=challenge["list_multimedia"],
-            list_goals=challenge["list_goals"],
-        )
-        for challenge in all_challenges
-    ]
-
-    return response
-
-
-@router_goal.patch("/{id_challenge}/goals")
-async def add_goal_to_challenge(id_challenge: str, goal_id: str, request: Request):
-    challenges = request.app.database["challenges"]
+async def get_goals(
+    request: Request,
+    queries: QueryParamFilterGoal = Depends(),
+    limit: int = Query(128, ge=1, le=1024),
+):
     goals = request.app.database["goals"]
 
-    # Obtener el desafío existente de la base de datos
-    existing_challenge = await challenges.find_one({"_id": ObjectId(id_challenge)})
-    if existing_challenge is None:
-        # El desafío no existe
-        raise HTTPException(status_code=404, detail="Challenge not found")
+    query = queries.dict(exclude_none=True)
 
-    # Obtener la meta de la base de datos
-    goal = await goals.find_one({"_id": ObjectId(goal_id)})
-    if goal is None:
-        # La meta no existe
-        raise HTTPException(status_code=404, detail="Goal not found")
+    all_goals = []
+    for goal in goals.find(query).limit(limit):
+        if res := GoalResponse.from_mongo(goal):
+            all_goals.append(res)
 
-    # Verificar si el tipo de métrica de la meta coincide con el del desafío
-    if goal["metric"] != existing_challenge["metric"]:
-        raise HTTPException(
-            status_code=400, detail="Goal metric does not match challenge metric"
-        )
-
-    # Verificar la fecha de finalización de la meta con la fecha de finalización del desafío
-    if "limit_time" in existing_challenge and "limit_time" in goal:
-        if goal["limit_time"] > existing_challenge["limit_time"]:
-            raise HTTPException(
-                status_code=400, detail="Goal limit time exceeds challenge limit time"
-            )
-
-    # Agregar la meta al desafío
-    existing_challenge["list_goals"].append(goal)
-
-    # Actualizar el desafío en la base de datos
-    await challenges.update_one(
-        {"_id": ObjectId(id_challenge)}, {"$set": existing_challenge}
-    )
-
-    # Construir y retornar la respuesta actualizada del desafío
-    response = GoalResponse(
-        id=id_challenge,
-        user_id=existing_challenge["user_id"],
-        title=existing_challenge["title"],
-        description=existing_challenge["description"],
-        metric=existing_challenge["metric"],
-        limit_time=existing_challenge["limit_time"],
-        state=existing_challenge["state"],
-        list_multimedia=existing_challenge["list_multimedia"],
-        list_goals=existing_challenge["list_goals"],
-    )
-    return response
+    return all_goals

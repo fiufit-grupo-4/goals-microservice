@@ -21,34 +21,48 @@ class GoalCreate(BaseModel):
 
 class GoalResponse(BaseModel):
     id: str
-    user_id: str
-    title: str
-    description: str
-    metric: str
-    limit_time: Optional[datetime] = None
-    state: State
-    list_multimedia: list[str]
-    quantity: int = 0
-    progress: int = 0
+    user_id: Optional[str]
+    title: Optional[str]
+    description: Optional[str]
+    metric: Optional[str]
+    limit_time: Optional[datetime]
+    state: Optional[State]
+    list_multimedia: Optional[list]
+    quantity: Optional[int]
+    progress: Optional[int]
+
+    @classmethod
+    def from_mongo(cls, goal):
+        if not goal:
+            return goal
+        id_goal = str(goal.pop('_id', None))
+        title = goal.pop('title', None)
+        description = goal.pop('description', None)
+
+        goal_dict = {
+            **goal,
+            'id': id_goal,
+            'title': title,
+            'description': description,
+        }
+        return cls(**goal_dict)
 
 
 class UpdateGoal(BaseModel):
-    description: Optional[str] = None
-    multimedia: Optional[list[str]]
+    title: Optional[str]
+    description: Optional[str]
+    multimedia: Optional[list]
     quantity: Optional[int]
     progress: Optional[int]
 
 
+class QueryParamFilterGoal(BaseModel):
+    title: Optional[str]
+    description: Optional[str]
+
+
 class Goal:
-    def __init__(
-            self,
-            user_id,
-            title,
-            description,
-            metric,
-            limit,
-            quantity
-    ):
+    def __init__(self, user_id, title, description, metric, limit, quantity):
         self.user_id = user_id
         self.title = title
         self.description = description
@@ -72,6 +86,6 @@ class Goal:
                 "multimedia": [],
                 "state": 1,  # NOT_INIT
                 "quantity": 50,
-                "progress": 0
+                "progress": 0,
             }
         }

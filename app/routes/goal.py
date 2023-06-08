@@ -172,10 +172,12 @@ async def update_state_goal(id_goal, request, state):
             status_code=status.HTTP_404_NOT_FOUND,
             content=f'Goal state {id_goal} not found',
         )
+
     update_data = {"state": state.value}
     result_update = goals.update_one({"_id": id_goal}, {"$set": update_data})
+
     if result_update.modified_count > 0:
-        logger.info(f'Updating goal state successfully')
+        logger.info('Updating goal state successfully')
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=f'Goal state {id_goal} updated successfully',

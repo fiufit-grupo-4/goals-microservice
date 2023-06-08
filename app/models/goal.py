@@ -56,6 +56,10 @@ class UpdateGoal(BaseModel):
     progress: Optional[int]
 
 
+class UpdateGoalState(BaseModel):
+    state: State
+
+
 class QueryParamFilterGoal(BaseModel):
     title: Optional[str]
     description: Optional[str]

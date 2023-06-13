@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Request, Query
 from fastapi.encoders import jsonable_encoder
 from starlette import status
 from starlette.responses import JSONResponse
+from firebase_admin import messaging
 
 from app.config import logger
 from app.models.goal import (
@@ -19,11 +20,24 @@ from app.auth.auth_utils import get_user_id, ObjectIdPydantic
 router_goal = APIRouter()
 
 
+def send_push_notification(device_token, title, body):
+    message = messaging.Message(
+        notification=messaging.Notification(title=title, body=body),
+        token=device_token,
+    )
+    messaging.send(message)
+
+
+def get_device_token(user_id):
+    # users db
+    return "token"
+
+
 @router_goal.post("/", response_model=GoalResponse)
 async def create_goal(
-    request: Request,
-    goal: GoalCreate,
-    user_id: ObjectId = Depends(get_user_id),
+        request: Request,
+        goal: GoalCreate,
+        user_id: ObjectId = Depends(get_user_id),
 ):
     goals = request.app.database["goals"]
 
@@ -57,7 +71,7 @@ async def create_goal(
 
 @router_goal.patch("/{id_goal}")
 async def update_goal(
-    request: Request, id_goal: ObjectIdPydantic, update_data: UpdateGoal
+        request: Request, id_goal: ObjectIdPydantic, update_data: UpdateGoal
 ):
     to_change = update_data.dict(exclude_none=True)
 
@@ -137,9 +151,9 @@ async def get_goal(id_goal: ObjectIdPydantic, request: Request):
 
 @router_goal.get("/")
 async def get_goals(
-    request: Request,
-    queries: QueryParamFilterGoal = Depends(),
-    limit: int = Query(128, ge=1, le=1024),
+        request: Request,
+        queries: QueryParamFilterGoal = Depends(),
+        limit: int = Query(128, ge=1, le=1024),
 ):
     goals = request.app.database["goals"]
 
@@ -160,6 +174,9 @@ async def start_goal(request: Request, id_goal: ObjectIdPydantic):
 
 @router_goal.patch("/{id_goal}/complete")
 async def complete_goal(request: Request, id_goal: ObjectIdPydantic):
+    user_id = get_user_id()
+    token = get_device_token(user_id)
+    send_push_notification(device_token=token, title='¡Hola!', body='¡Tienes una nueva notificación!')
     return await update_state_goal(id_goal, request, State.COMPLETE)
 
 

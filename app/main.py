@@ -1,3 +1,4 @@
+import firebase_admin
 from fastapi import FastAPI
 import pymongo
 from os import environ
@@ -7,7 +8,7 @@ from .urls import api_router
 
 MONGODB_URI = environ["MONGODB_URI"]
 app = FastAPI()
-
+firebase_admin.initialize_app()
 
 @app.on_event("startup")
 async def startup_db_client():

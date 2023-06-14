@@ -16,6 +16,7 @@ from app.models.goal import (
     State,
 )
 from app.auth.auth_utils import get_user_id, ObjectIdPydantic
+from app.services import ServiceUsers
 
 router_goal = APIRouter()
 
@@ -29,8 +30,10 @@ def send_push_notification(device_token, title, body):
 
 
 def get_device_token(user_id):
-    # users db
-    return "token"
+    user = await ServiceUsers.get(f'/{user_id}')
+    if user.status_code == 200:
+        user = user.json()
+        return user.pop('device_token')
 
 
 @router_goal.post("/", response_model=GoalResponse)

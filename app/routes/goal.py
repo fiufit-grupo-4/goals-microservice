@@ -22,6 +22,9 @@ router_goal = APIRouter()
 
 
 def send_push_notification(device_token, title, body):
+    print("--------")
+    print(device_token)
+    print("--------")
     message = messaging.Message(
         notification=messaging.Notification(title=title, body=body),
         token=device_token,
@@ -29,8 +32,8 @@ def send_push_notification(device_token, title, body):
     messaging.send(message)
 
 
-def get_device_token(user_id):
-    user = await ServiceUsers.get(f'/{user_id}')
+async def get_device_token(user_id):
+    user = await ServiceUsers.get(f'users/{user_id}')
     if user.status_code == 200:
         user = user.json()
         return user.pop('device_token')
@@ -177,9 +180,11 @@ async def start_goal(request: Request, id_goal: ObjectIdPydantic):
 
 @router_goal.patch("/{id_goal}/complete")
 async def complete_goal(request: Request, id_goal: ObjectIdPydantic):
-    user_id = get_user_id()
-    token = get_device_token(user_id)
-    send_push_notification(device_token=token, title='¡Hola!', body='¡Tienes una nueva notificación!')
+    goals = request.app.database["goals"]
+    goal = goals.find_one({"_id": id_goal})
+    user_id = goal['user_id']
+    token = await get_device_token(user_id)
+    send_push_notification(device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!')
     return await update_state_goal(id_goal, request, State.COMPLETE)
 
 

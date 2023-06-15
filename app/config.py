@@ -12,7 +12,7 @@ logger = logging.getLogger('app')
 class Settings(BaseSettings):
     jwt_secret: str = environ.get("JWT_SECRET", "123456")
     jwt_algorithm: str = environ.get("JWT_ALGORITHM", "HS256")
-    USER_SERVICE_URL: str = environ.get('USER_SERVICE_URL', 'http:/user-microservice:7501')
+    USER_SERVICE_URL: str = environ.get('USER_SERVICE_URL', 'http://user-microservice:7500/')
 
     class Config:
         env_file = ".env"

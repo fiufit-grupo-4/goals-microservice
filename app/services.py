@@ -2,7 +2,9 @@ from fastapi import HTTPException
 import httpx
 import app.main as main
 from starlette import status
-from config import Settings
+from os import environ
+
+USER_SERVICE_URL = environ.get('USER_SERVICE_URL', 'http://user-microservice:7501')
 
 
 class ServiceUsers:
@@ -10,7 +12,7 @@ class ServiceUsers:
     async def get(path):
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(Settings.USER_SERVICE_URL + path)
+                response = await client.get(USER_SERVICE_URL + path)
                 return response
         except Exception:
             main.logger.error('User service cannot be accessed')

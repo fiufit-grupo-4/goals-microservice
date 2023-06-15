@@ -2,13 +2,17 @@ import firebase_admin
 from fastapi import FastAPI
 import pymongo
 from os import environ
+from firebase_admin import credentials
+from app.credentials import firebase_credentials
 
 from .config import logger
 from .urls import api_router
 
 MONGODB_URI = environ["MONGODB_URI"]
 app = FastAPI()
-firebase_admin.initialize_app()
+cred = credentials.Certificate(firebase_credentials)
+firebase_admin.initialize_app(cred)
+
 
 @app.on_event("startup")
 async def startup_db_client():

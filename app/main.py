@@ -22,9 +22,10 @@ async def startup_db_client():
     app.logger = logger
     # Build a collection
     app.database = app.mongodb_client["goals_microservice"]
+    # db = app.database
     # collection = db.goals_microservice
-
-    # Clear collection data
+    #
+    # # Clear collection data
     # collection.delete_many({})
 
 

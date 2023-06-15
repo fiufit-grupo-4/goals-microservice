@@ -10,7 +10,7 @@ from app.models.goal import (
     GoalResponse,
     Goal,
     UpdateGoal,
-    State, RequestUpdateStateGoal,
+    State, UpdateProgressGoal,
 )
 from app.auth.auth_utils import get_user_id, ObjectIdPydantic
 
@@ -88,15 +88,6 @@ async def get_me_goals(
 async def update_goal(
         request: Request, id_goal: ObjectIdPydantic, update_data: UpdateGoal
 ):
-    to_change = update_data.dict(exclude_none=True)
-
-    if not to_change or len(to_change) == 0:
-        logger.info('No values specified in body to update')
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content='No values specified to update',
-        )
-
     goals = request.app.database["goals"]
     # Obtener el desafío existente de la base de datos
     goal = goals.find_one({"_id": id_goal})
@@ -107,24 +98,14 @@ async def update_goal(
             status_code=status.HTTP_404_NOT_FOUND,
             content=f'Goal {id_goal} not found',
         )
+    goal["progress"] = goal["progress"] + update_data.progress
 
-    if update_data.description is not None:
-        goal["description"] = update_data.description
+    if goal["progress"] >= goal["quantity"]:
+        await complete_goal(request, id_goal)
 
-    result_update = goals.update_one({"_id": id_goal}, {"$set": goal})
+    goals.update_one({"_id": id_goal}, {"$set": goal})
 
-    if result_update.modified_count > 0:
-        logger.info(f'Updating Goal {id_goal} a values of {list(to_change.keys())}')
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content=f'Goal {id_goal} updated successfully',
-        )
-    else:
-        logger.info(f'Goal {id_goal} not updated')
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=f'Goal {id_goal} not updated',
-        )
+    return {"message": "Goal updated successfully"}
 
 
 @router_goal.delete("/{id_goal}", status_code=status.HTTP_200_OK)
@@ -162,27 +143,35 @@ async def get_goal(id_goal: ObjectIdPydantic, request: Request):
 
 
 @router_goal.patch("/{id_goal}/progress", status_code=status.HTTP_200_OK)
-async def progress_goal(request: Request, id_goal: ObjectIdPydantic):
+async def progress_goal(request: Request, id_goal: ObjectIdPydantic, update_data: UpdateProgressGoal):
     goals = request.app.database["goals"]
+    # Obtener el desafío existente de la base de datos
     goal = goals.find_one({"_id": id_goal})
+
     if not goal:
-        logger.info(f'Goal state {id_goal} not found to update')
+        logger.info(f'Goal {id_goal} not found to update')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=f'Goal state {id_goal} not found',
+            content=f'Goal {id_goal} not found',
         )
+    goal["progress"] = goal["progress"] + update_data.progress
+
+    if goal["progress"] >= goal["quantity"]:
+        await complete_goal(request, id_goal)
+
+    goals.update_one({"_id": id_goal}, {"$set": goal})
 
     return {"message": "Goal updated successfully"}
 
 
 @router_goal.patch("/{id_goal}/start", status_code=status.HTTP_200_OK)
 async def start_goal(request: Request, id_goal: ObjectIdPydantic):
-    return await update_state_goal(update_goal, request, State.INIT)
+    return await update_state_goal(id_goal, request, State.INIT)
 
 
 @router_goal.patch("/{id_goal}/complete", status_code=status.HTTP_200_OK)
 async def complete_goal(request: Request, id_goal: ObjectIdPydantic):
-    return await update_state_goal(update_goal, request, State.COMPLETE)
+    return await update_state_goal(id_goal, request, State.COMPLETE)
 
 
 async def update_state_goal(id_goal, request, state):

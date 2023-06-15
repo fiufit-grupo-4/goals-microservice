@@ -11,10 +11,6 @@ class State(Enum):
     STOP = 4
 
 
-class RequestUpdateStateGoal(BaseModel):
-    state: Optional[int] = State.NOT_INIT
-    id_goal: Optional[str]
-    progress: Optional[int] = 0
 
 
 class GoalCreate(BaseModel):
@@ -60,9 +56,10 @@ class GoalResponse(BaseModel):
 
 
 class UpdateGoal(BaseModel):
-    title: Optional[str]
-    description: Optional[str]
-    quantity: Optional[int]
+    progress: Optional[int]
+
+
+class UpdateProgressGoal(BaseModel):
     progress: Optional[int]
 
 

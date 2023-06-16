@@ -40,9 +40,9 @@ async def get_device_token(user_id):
 
 @router_goal.post("/", response_model=GoalResponse)
 async def create_goal(
-        request: Request,
-        goal: GoalCreate,
-        user_id: ObjectId = Depends(get_user_id),
+    request: Request,
+    goal: GoalCreate,
+    user_id: ObjectId = Depends(get_user_id),
 ):
     goals = request.app.database["goals"]
     # Crear un nuevo desafío en la base de datos
@@ -194,7 +194,11 @@ async def start_goal(request: Request, id_goal: ObjectIdPydantic):
 
 
 @router_goal.patch("/{id_goal}/complete", status_code=status.HTTP_200_OK)
-async def complete_goal(request: Request, id_goal: ObjectIdPydantic, user_id: ObjectId = Depends(get_user_id)):
+async def complete_goal(
+    request: Request,
+    id_goal: ObjectIdPydantic,
+    user_id: ObjectId = Depends(get_user_id),
+):
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})
     # token = await get_device_token(user_id)

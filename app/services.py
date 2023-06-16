@@ -26,7 +26,6 @@ class ServiceUsers:
 
 
 class ServiceTrainers:
-
     @staticmethod
     async def patch(path, json, headers):
         try:

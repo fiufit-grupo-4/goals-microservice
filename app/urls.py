@@ -10,4 +10,6 @@ def get_root() -> dict:
     return {"message": "OK"}
 
 
-api_router.include_router(router_goal, tags=["Athletes Goals"], prefix="/athletes/me/goals")
+api_router.include_router(
+    router_goal, tags=["Athletes Goals"], prefix="/athletes/me/goals"
+)

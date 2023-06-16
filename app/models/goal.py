@@ -11,8 +11,6 @@ class State(Enum):
     STOP = 4
 
 
-
-
 class GoalCreate(BaseModel):
     traning_id: Optional[str]
     title: str
@@ -73,17 +71,18 @@ class QueryParamFilterGoal(BaseModel):
 
 
 class Goal:
-    def __init__(self,
-                 user_id,
-                 traning_id: Optional[str],
-                 title,
-                 description,
-                 metric,
-                 limit,
-                 state: Optional[int] = State.NOT_INIT,
-                 quantity: Optional[int] = 0,
-                 date_init: Optional[datetime] = None,
-                 ):
+    def __init__(
+        self,
+        user_id,
+        traning_id: Optional[str],
+        title,
+        description,
+        metric,
+        limit,
+        state: Optional[int] = State.NOT_INIT,
+        quantity: Optional[int] = 0,
+        date_init: Optional[datetime] = None,
+    ):
         self.user_id = user_id
         self.traning_id = traning_id
         self.title = title

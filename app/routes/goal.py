@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Request, Query
 from fastapi.encoders import jsonable_encoder
 from starlette import status
 from starlette.responses import JSONResponse
+from firebase_admin import messaging
 
 from app.config import logger
 from app.models.goal import (
@@ -14,19 +15,37 @@ from app.models.goal import (
     UpdateProgressGoal,
 )
 from app.auth.auth_utils import get_user_id, ObjectIdPydantic
+from app.services import ServiceUsers
 
 router_goal = APIRouter()
 
 
-@router_goal.post("/", response_model=GoalResponse, status_code=status.HTTP_200_OK)
+def send_push_notification(device_token, title, body):
+    print("--------")
+    print(device_token)
+    print("--------")
+    message = messaging.Message(
+        notification=messaging.Notification(title=title, body=body),
+        token=device_token,
+    )
+    messaging.send(message)
+
+
+async def get_device_token(user_id):
+    user = await ServiceUsers.get(f'users/{user_id}')
+    if user.status_code == 200:
+        user = user.json()
+        return user.pop('device_token')
+
+
+@router_goal.post("/", response_model=GoalResponse)
 async def create_goal(
-    request: Request,
-    goal: GoalCreate,
-    user_id: ObjectId = Depends(get_user_id),
+        request: Request,
+        goal: GoalCreate,
+        user_id: ObjectId = Depends(get_user_id),
 ):
     goals = request.app.database["goals"]
     # Crear un nuevo desafío en la base de datos
-    logger.info(goal.json())
     new_goal = Goal(
         user_id=str(user_id),
         traning_id=goal.traning_id,
@@ -173,6 +192,11 @@ async def start_goal(request: Request, id_goal: ObjectIdPydantic):
 
 @router_goal.patch("/{id_goal}/complete", status_code=status.HTTP_200_OK)
 async def complete_goal(request: Request, id_goal: ObjectIdPydantic):
+    goals = request.app.database["goals"]
+    goal = goals.find_one({"_id": id_goal})
+    user_id = goal['user_id']
+    token = await get_device_token(user_id)
+    send_push_notification(device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!')
     return await update_state_goal(id_goal, request, State.COMPLETE)
 
 

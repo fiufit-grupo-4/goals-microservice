@@ -16,10 +16,10 @@ class GoalCreate(BaseModel):
     title: str
     description: str
     metric: str
-    quantity: int
+    quantity_steps: int
     limit_time: Optional[datetime] = None
     date_init: Optional[datetime] = None
-    state: Optional[int] = State.INIT
+    state: Optional[int] = State.INIT.value
 
 
 class GoalResponse(BaseModel):
@@ -33,8 +33,8 @@ class GoalResponse(BaseModel):
     date_init: Optional[datetime]
     date_complete: Optional[datetime]
     state: Optional[int]
-    quantity: Optional[int]
-    progress: Optional[int]
+    quantity_steps: Optional[int]
+    progress_steps: Optional[int]
 
     @classmethod
     def from_mongo(cls, goal):
@@ -54,11 +54,15 @@ class GoalResponse(BaseModel):
 
 
 class UpdateGoal(BaseModel):
-    progress: Optional[int]
+    title: Optional[str]
+    description: Optional[str]
+    metric: Optional[str]
+    limit_time: Optional[datetime]
+    quantity_steps: Optional[int]
 
 
 class UpdateProgressGoal(BaseModel):
-    progress: Optional[int]
+    progress_steps: Optional[int]
 
 
 class UpdateGoalState(BaseModel):
@@ -79,8 +83,8 @@ class Goal:
         description,
         metric,
         limit,
-        state: Optional[int] = State.NOT_INIT,
-        quantity: Optional[int] = 0,
+        state: Optional[int] = State.NOT_INIT.value,
+        quantity_steps: Optional[int] = 0,
         date_init: Optional[datetime] = None,
     ):
         self.user_id = user_id
@@ -90,7 +94,7 @@ class Goal:
         self.metric = metric
         self.limit = limit
         self.state = state
-        self.quantity = quantity
-        self.progress = 0
+        self.quantity_steps = quantity_steps
+        self.progress_steps = 0
         self.date_init = date_init
         self.date_complete = None

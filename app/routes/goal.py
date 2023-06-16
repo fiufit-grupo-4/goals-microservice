@@ -54,7 +54,7 @@ async def create_goal(
         metric=goal.metric,
         limit=goal.limit_time,
         state=goal.state,
-        quantity=goal.quantity,
+        quantity_steps=goal.quantity_steps,
     )
 
     if goal.traning_id is not None:
@@ -76,8 +76,8 @@ async def create_goal(
         date_init=new_goal.date_init,
         date_complete=new_goal.date_complete,
         state=new_goal.state,
-        quantity=new_goal.quantity,
-        progress=new_goal.progress,
+        quantity_steps=new_goal.quantity_steps,
+        progress_steps=new_goal.progress_steps,
     )
 
     return response
@@ -107,8 +107,16 @@ async def get_me_goals(
 async def update_goal(
     request: Request, id_goal: ObjectIdPydantic, update_data: UpdateGoal
 ):
+    to_change = update_data.dict(exclude_none=True)
+
+    if not to_change or len(to_change) == 0:
+        logger.info('No values specified in body to update')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content='No values specified to update',
+        )
+
     goals = request.app.database["goals"]
-    # Obtener el desafío existente de la base de datos
     goal = goals.find_one({"_id": id_goal})
 
     if not goal:
@@ -117,12 +125,8 @@ async def update_goal(
             status_code=status.HTTP_404_NOT_FOUND,
             content=f'Goal {id_goal} not found',
         )
-    goal["progress"] = goal["progress"] + update_data.progress
 
-    if goal["progress"] >= goal["quantity"]:
-        await complete_goal(request, id_goal)
-
-    goals.update_one({"_id": id_goal}, {"$set": goal})
+    goals.update_one({"_id": id_goal}, {"$set": to_change})
 
     return {"message": "Goal updated successfully"}
 
@@ -161,8 +165,8 @@ async def get_goal(id_goal: ObjectIdPydantic, request: Request):
         )
 
 
-@router_goal.patch("/{id_goal}/progress", status_code=status.HTTP_200_OK)
-async def progress_goal(
+@router_goal.patch("/{id_goal}/progress_steps", status_code=status.HTTP_200_OK)
+async def progress_steps_goal(
     request: Request, id_goal: ObjectIdPydantic, update_data: UpdateProgressGoal
 ):
     goals = request.app.database["goals"]
@@ -175,9 +179,9 @@ async def progress_goal(
             status_code=status.HTTP_404_NOT_FOUND,
             content=f'Goal {id_goal} not found',
         )
-    goal["progress"] = goal["progress"] + update_data.progress
+    goal["progress_steps"] = goal["progress_steps"] + update_data.progress_steps
 
-    if goal["progress"] >= goal["quantity"]:
+    if goal["progress_steps"] >= goal["quantity_steps"]:
         await complete_goal(request, id_goal)
 
     goals.update_one({"_id": id_goal}, {"$set": goal})

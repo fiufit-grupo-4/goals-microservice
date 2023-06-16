@@ -12,7 +12,7 @@ class State(Enum):
 
 
 class GoalCreate(BaseModel):
-    traning_id: Optional[str]
+    training_id: Optional[str]
     title: str
     description: str
     metric: str
@@ -25,7 +25,7 @@ class GoalCreate(BaseModel):
 class GoalResponse(BaseModel):
     id: str
     user_id: Optional[str]
-    traning_id: Optional[str]
+    training_id: Optional[str]
     title: Optional[str]
     description: Optional[str]
     metric: Optional[str]
@@ -78,7 +78,7 @@ class Goal:
     def __init__(
         self,
         user_id,
-        traning_id: Optional[str],
+        training_id: Optional[str],
         title,
         description,
         metric,
@@ -88,7 +88,7 @@ class Goal:
         date_init: Optional[datetime] = None,
     ):
         self.user_id = user_id
-        self.traning_id = traning_id
+        self.training_id = training_id
         self.title = title
         self.description = description
         self.metric = metric

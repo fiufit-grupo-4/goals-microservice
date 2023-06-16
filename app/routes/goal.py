@@ -15,7 +15,7 @@ from app.models.goal import (
     UpdateProgressGoal,
 )
 from app.auth.auth_utils import get_user_id, ObjectIdPydantic
-from app.services import ServiceUsers
+from app.services import ServiceUsers, ServiceTrainers
 
 router_goal = APIRouter()
 
@@ -48,7 +48,7 @@ async def create_goal(
     # Crear un nuevo desafío en la base de datos
     new_goal = Goal(
         user_id=str(user_id),
-        traning_id=goal.traning_id,
+        training_id=goal.training_id,
         title=goal.title,
         description=goal.description,
         metric=goal.metric,
@@ -57,8 +57,8 @@ async def create_goal(
         quantity_steps=goal.quantity_steps,
     )
 
-    if goal.traning_id is not None:
-        new_goal.traning_id = goal.traning_id
+    if goal.training_id is not None:
+        new_goal.training_id = goal.training_id
         new_goal.state = State.NOT_INIT.value
         new_goal.date_init = goal.date_init
 
@@ -68,7 +68,7 @@ async def create_goal(
     response = GoalResponse(
         id=str(goal_id.inserted_id),
         user_id=new_goal.user_id,
-        traning_id=new_goal.traning_id,
+        training_id=new_goal.training_id,
         title=new_goal.title,
         description=new_goal.description,
         metric=new_goal.metric,
@@ -180,11 +180,10 @@ async def progress_steps_goal(
             content=f'Goal {id_goal} not found',
         )
     goal["progress_steps"] = goal["progress_steps"] + update_data.progress_steps
+    goals.update_one({"_id": id_goal}, {"$set": goal})
 
     if goal["progress_steps"] >= goal["quantity_steps"]:
         await complete_goal(request, id_goal)
-
-    goals.update_one({"_id": id_goal}, {"$set": goal})
 
     return {"message": "Goal updated successfully"}
 
@@ -195,13 +194,23 @@ async def start_goal(request: Request, id_goal: ObjectIdPydantic):
 
 
 @router_goal.patch("/{id_goal}/complete", status_code=status.HTTP_200_OK)
-async def complete_goal(request: Request, id_goal: ObjectIdPydantic):
+async def complete_goal(request: Request, id_goal: ObjectIdPydantic, user_id: ObjectId = Depends(get_user_id)):
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})
-    user_id = goal['user_id']
-    token = await get_device_token(user_id)
-    send_push_notification(device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!')
-    return await update_state_goal(id_goal, request, State.COMPLETE)
+    # token = await get_device_token(user_id)
+    # send_push_notification(device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!')
+    await update_state_goal(id_goal, request, State.COMPLETE)
+
+    training_id = goal['training_id']
+    if training_id is not None:
+        headers = request.headers
+        await ServiceTrainers.patch(
+            f'/athletes/me/trainings/{training_id}/complete',
+            json={},
+            headers={"authorization": headers["authorization"]},
+        )
+
+    return {"message": "Goal completed successfully"}
 
 
 @router_goal.patch("/{id_goal}/stop", status_code=status.HTTP_200_OK)
@@ -218,7 +227,7 @@ async def update_state_goal(id_goal, request, state):
             status_code=status.HTTP_404_NOT_FOUND,
             content=f'Goal state {id_goal} not found',
         )
-
+    logger.info(f'Updating goal state: {state.name}')
     update_data = {"state": state.value}
     result_update = goals.update_one({"_id": id_goal}, {"$set": update_data})
 

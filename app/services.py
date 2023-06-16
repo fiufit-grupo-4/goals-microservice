@@ -26,11 +26,16 @@ class ServiceUsers:
 
 
 class ServiceTrainers:
+
     @staticmethod
-    async def get(path):
+    async def patch(path, json, headers):
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(TRAINING_SERVICE_URL + path)
+                response = await client.patch(
+                    f"{TRAINING_SERVICE_URL}{path}",
+                    json=json,
+                    headers=headers,
+                )
                 return response
         except Exception:
             main.logger.error('Training service cannot be accessed')

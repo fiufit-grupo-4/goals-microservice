@@ -18,7 +18,6 @@ from app.auth.auth_utils import get_user_id, ObjectIdPydantic
 router_goal = APIRouter()
 
 
-### Create new goal ###
 @router_goal.post("/", response_model=GoalResponse, status_code=status.HTTP_200_OK)
 async def create_goal(
     request: Request,
@@ -65,7 +64,6 @@ async def create_goal(
     return response
 
 
-### Select own goal ###
 @router_goal.get("/", status_code=status.HTTP_200_OK)
 async def get_me_goals(
     request: Request,
@@ -179,7 +177,7 @@ async def complete_goal(request: Request, id_goal: ObjectIdPydantic):
 
 
 @router_goal.patch("/{id_goal}/stop", status_code=status.HTTP_200_OK)
-async def complete_goal(request: Request, id_goal: ObjectIdPydantic):
+async def stop_goal(request: Request, id_goal: ObjectIdPydantic):
     return await update_state_goal(id_goal, request, State.STOP)
 
 

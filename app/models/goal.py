@@ -8,26 +8,31 @@ class State(Enum):
     NOT_INIT = 1
     INIT = 2
     COMPLETE = 3
+    STOP = 4
 
 
 class GoalCreate(BaseModel):
+    traning_id: Optional[str]
     title: str
     description: str
     metric: str
+    quantity: int
     limit_time: Optional[datetime] = None
-    quantity: int = 0
-    progress: int = 0
+    date_init: Optional[datetime] = None
+    state: Optional[int] = State.INIT
 
 
 class GoalResponse(BaseModel):
     id: str
     user_id: Optional[str]
+    traning_id: Optional[str]
     title: Optional[str]
     description: Optional[str]
     metric: Optional[str]
     limit_time: Optional[datetime]
-    state: Optional[State]
-    list_multimedia: Optional[list]
+    date_init: Optional[datetime]
+    date_complete: Optional[datetime]
+    state: Optional[int]
     quantity: Optional[int]
     progress: Optional[int]
 
@@ -49,10 +54,10 @@ class GoalResponse(BaseModel):
 
 
 class UpdateGoal(BaseModel):
-    title: Optional[str]
-    description: Optional[str]
-    multimedia: Optional[list]
-    quantity: Optional[int]
+    progress: Optional[int]
+
+
+class UpdateProgressGoal(BaseModel):
     progress: Optional[int]
 
 
@@ -66,30 +71,26 @@ class QueryParamFilterGoal(BaseModel):
 
 
 class Goal:
-    def __init__(self, user_id, title, description, metric, limit, quantity):
+    def __init__(
+        self,
+        user_id,
+        traning_id: Optional[str],
+        title,
+        description,
+        metric,
+        limit,
+        state: Optional[int] = State.NOT_INIT,
+        quantity: Optional[int] = 0,
+        date_init: Optional[datetime] = None,
+    ):
         self.user_id = user_id
+        self.traning_id = traning_id
         self.title = title
         self.description = description
         self.metric = metric
         self.limit = limit
-        self.multimedia = []
-        self.state = State.NOT_INIT
+        self.state = state
         self.quantity = quantity
         self.progress = 0
-
-    class Config:
-        allow_population_by_field_name = True
-        schema_extra = {
-            "example": {
-                "_id": "603e38915fc3ab182c67b2f9",
-                "user_id": "609c962ba85e2101a9b14b55",
-                "title": "Reto de 50K a fin de anio",
-                "description": "Correr la mararon de 50K a fin de anio",
-                "metric": "distancia",
-                "limit": "2023-12-31",
-                "multimedia": [],
-                "state": 1,  # NOT_INIT
-                "quantity": 50,
-                "progress": 0,
-            }
-        }
+        self.date_init = date_init
+        self.date_complete = None

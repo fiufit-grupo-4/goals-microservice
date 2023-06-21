@@ -22,14 +22,9 @@ router_goal = APIRouter()
 
 
 def send_push_notification(device_token, title, body):
-    print("--------")
-    print(device_token)
-    print("--------")
-    message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
-        token=device_token,
-    )
-    messaging.send(message)
+    if device_token is not None:
+        message = messaging.Message(notification=messaging.Notification(title=title, body=body), token=device_token)
+        messaging.send(message)
 
 
 async def get_device_token(user_id):

@@ -11,6 +11,7 @@ from app.models.goal import (
     GoalCreate,
     GoalResponse,
     Goal,
+    GoalTypes,
     UpdateGoal,
     State,
     UpdateProgressGoal,
@@ -19,6 +20,17 @@ from app.auth.auth_utils import get_user_id, ObjectIdPydantic
 from app.services import ServiceUsers, ServiceTrainers
 
 router_goal = APIRouter()
+
+
+def step_to_calorie(step):
+    calories = step * 0.04
+    return calories
+
+
+def step_to_kilometer(step):
+    meters = step * 0.76
+    kilometers = meters / 1000
+    return kilometers
 
 
 def send_push_notification(device_token, title, body):
@@ -49,10 +61,28 @@ async def progress_steps_all_goal(
 
     # Actualizar los objetivos encontrados
     for goal in goals.find(query):
+        logger.error(f"GOAL LIMIT {goal['limit']}, NOW {datetime.now()}")
+        if (
+            goal["limit"]
+            and (goal["limit"] < datetime.now())
+            and goal["state"] != State.EXPIRED.value
+        ):
+            goals.update_one(
+                {"_id": goal["_id"]}, {"$set": {"state": State.EXPIRED.value}}
+            )
+            continue
+
         if goal["state"] == State.INIT:
-            goal["progress_steps"] += update_data.progress_steps
+            if goal["metric"] == GoalTypes.KILOMETERS.value:
+                goal["progress_steps"] += step_to_kilometer(update_data.progress_steps)
+            elif goal["metric"] == GoalTypes.STEPS.value:
+                goal["progress_steps"] += update_data.progress_steps
+            elif goal["metric"] == GoalTypes.CALORIES.value:
+                goal["progress_steps"] += step_to_calorie(update_data.progress_steps)
+
             if goal["progress_steps"] >= goal["quantity_steps"]:
                 goal["state"] = State.COMPLETE
+
                 await complete_goal(request, goal["_id"])
         goals.update_one({"_id": goal["_id"]}, {"$set": goal})
 
@@ -83,7 +113,20 @@ async def create_goal(
         new_goal.state = State.INIT.value
         new_goal.date_init = datetime.now()
 
-    goal_id = goals.insert_one(jsonable_encoder(new_goal))
+    res_json = jsonable_encoder(new_goal)
+    logger.warning(res_json)
+    if res_json["limit"] is not None:
+        # example format @2023-06-22T20:59:31.445000+00:00@
+        res_json["limit"] = datetime.strptime(
+            res_json["limit"], "%Y-%m-%dT%H:%M:%S.%f%z"
+        )
+    if res_json["date_init"] is not None:
+        # example format @2023-06-22T21:10:59.954853@
+        res_json["date_init"] = datetime.strptime(
+            res_json["date_init"], "%Y-%m-%dT%H:%M:%S.%f"
+        )
+
+    goal_id = goals.insert_one(res_json)
 
     # Construir la respuesta del desafío creado
     response = GoalResponse(
@@ -95,7 +138,7 @@ async def create_goal(
         metric=new_goal.metric,
         limit_time=new_goal.limit,
         date_init=new_goal.date_init,
-        date_complete=new_goal.date_complete,
+        date_complete=None,
         state=new_goal.state,
         quantity_steps=new_goal.quantity_steps,
         progress_steps=new_goal.progress_steps,
@@ -139,6 +182,15 @@ async def update_goal(
 
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})
+
+    if (
+        goal["state"] == State.EXPIRED.value
+        and to_change["limit_time"] is not None
+        and to_change["limit_time"] < datetime.now()
+    ):
+        to_change["state"] = State.NOT_INIT.value
+        to_change["progress_steps"] = 0
+        to_change["date_init"] = None
 
     if not goal:
         logger.info(f'Goal {id_goal} not found to update')
@@ -253,10 +305,23 @@ async def update_state_goal(id_goal, request, state):
             content=f'Goal state {id_goal} not found',
         )
     logger.info(f'Updating goal state: {state.name}')
-    update_data = {"state": state.value}
-    if state == State.COMPLETE:
-        update_data["date_complete"] = datetime.now()
-    result_update = goals.update_one({"_id": id_goal}, {"$set": update_data})
+
+    if goal["limit"] and (goal["limit"] < datetime.now()):
+        result_update = goals.update_one(
+            {"_id": goal["_id"]}, {"$set": {"state": State.EXPIRED.value}}
+        )
+
+    elif state == State.INIT.value:
+        result_update = goals.update_one(
+            {"_id": id_goal}, {"$set": {"date_init": datetime.now(), "state": state}}
+        )
+    elif state == State.COMPLETE.value:
+        result_update = goals.update_one(
+            {"_id": id_goal},
+            {"$set": {"date_complete": datetime.now(), "state": state}},
+        )
+    else:
+        result_update = goals.update_one({"_id": id_goal}, {"$set": {"state": state}})
 
     if result_update.modified_count > 0:
         logger.info('Updating goal state successfully')

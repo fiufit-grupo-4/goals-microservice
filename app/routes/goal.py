@@ -23,7 +23,10 @@ router_goal = APIRouter()
 
 def send_push_notification(device_token, title, body):
     if device_token is not None:
-        message = messaging.Message(notification=messaging.Notification(title=title, body=body), token=device_token)
+        message = messaging.Message(
+            notification=messaging.Notification(title=title, body=body),
+            token=device_token,
+        )
         messaging.send(message)
 
 
@@ -36,9 +39,9 @@ async def get_device_token(user_id):
 
 @router_goal.patch("/progress_steps", status_code=status.HTTP_200_OK)
 async def progress_steps_all_goal(
-        request: Request,
-        update_data: UpdateProgressGoal,
-        user_id: ObjectId = Depends(get_user_id)
+    request: Request,
+    update_data: UpdateProgressGoal,
+    user_id: ObjectId = Depends(get_user_id),
 ):
     goals = request.app.database["goals"]
     # Filtrar por el user_id específico
@@ -58,9 +61,9 @@ async def progress_steps_all_goal(
 
 @router_goal.post("/", response_model=GoalResponse)
 async def create_goal(
-        request: Request,
-        goal: GoalCreate,
-        user_id: ObjectId = Depends(get_user_id),
+    request: Request,
+    goal: GoalCreate,
+    user_id: ObjectId = Depends(get_user_id),
 ):
     goals = request.app.database["goals"]
     # Crear un nuevo desafío en la base de datos
@@ -103,9 +106,9 @@ async def create_goal(
 
 @router_goal.get("/", status_code=status.HTTP_200_OK)
 async def get_me_goals(
-        request: Request,
-        limit: int = Query(128, ge=1, le=1024),
-        user_id: ObjectId = Depends(get_user_id),
+    request: Request,
+    limit: int = Query(128, ge=1, le=1024),
+    user_id: ObjectId = Depends(get_user_id),
 ):
     goals = request.app.database["goals"]
 
@@ -123,7 +126,7 @@ async def get_me_goals(
 
 @router_goal.patch("/{id_goal}", status_code=status.HTTP_200_OK)
 async def update_goal(
-        request: Request, id_goal: ObjectIdPydantic, update_data: UpdateGoal
+    request: Request, id_goal: ObjectIdPydantic, update_data: UpdateGoal
 ):
     to_change = update_data.dict(exclude_none=True)
 
@@ -185,7 +188,7 @@ async def get_goal(id_goal: ObjectIdPydantic, request: Request):
 
 @router_goal.patch("/{id_goal}/progress_steps", status_code=status.HTTP_200_OK)
 async def progress_steps_goal(
-        request: Request, id_goal: ObjectIdPydantic, update_data: UpdateProgressGoal
+    request: Request, id_goal: ObjectIdPydantic, update_data: UpdateProgressGoal
 ):
     goals = request.app.database["goals"]
     # Obtener el desafío existente de la base de datos
@@ -205,6 +208,7 @@ async def progress_steps_goal(
 
     return {"message": "Goal updated successfully"}
 
+
 @router_goal.patch("/{id_goal}/start", status_code=status.HTTP_200_OK)
 async def start_goal(request: Request, id_goal: ObjectIdPydantic):
     return await update_state_goal(id_goal, request, State.INIT)
@@ -212,9 +216,9 @@ async def start_goal(request: Request, id_goal: ObjectIdPydantic):
 
 @router_goal.patch("/{id_goal}/complete", status_code=status.HTTP_200_OK)
 async def complete_goal(
-        request: Request,
-        id_goal: ObjectIdPydantic,
-        user_id: ObjectId = Depends(get_user_id),
+    request: Request,
+    id_goal: ObjectIdPydantic,
+    user_id: ObjectId = Depends(get_user_id),
 ):
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})

@@ -23,7 +23,10 @@ router_goal = APIRouter()
 
 def send_push_notification(device_token, title, body):
     if device_token is not None:
-        message = messaging.Message(notification=messaging.Notification(title=title, body=body), token=device_token)
+        message = messaging.Message(
+            notification=messaging.Notification(title=title, body=body),
+            token=device_token,
+        )
         messaging.send(message)
 
 
@@ -32,6 +35,28 @@ async def get_device_token(user_id):
     if user.status_code == 200:
         user = user.json()
         return user.pop('device_token')
+
+
+@router_goal.patch("/progress_steps", status_code=status.HTTP_200_OK)
+async def progress_steps_all_goal(
+    request: Request,
+    update_data: UpdateProgressGoal,
+    user_id: ObjectId = Depends(get_user_id),
+):
+    goals = request.app.database["goals"]
+    # Filtrar por el user_id específico
+    query = {"user_id": str(user_id)}
+
+    # Actualizar los objetivos encontrados
+    for goal in goals.find(query):
+        if goal["state"] == State.INIT:
+            goal["progress_steps"] += update_data.progress_steps
+            if goal["progress_steps"] >= goal["quantity_steps"]:
+                goal["state"] = State.COMPLETE
+                await complete_goal(request, goal["_id"])
+        goals.update_one({"_id": goal["_id"]}, {"$set": goal})
+
+    return {"message": "Goal updated successfully"}
 
 
 @router_goal.post("/", response_model=GoalResponse)

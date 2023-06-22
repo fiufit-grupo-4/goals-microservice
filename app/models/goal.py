@@ -62,7 +62,7 @@ class UpdateGoal(BaseModel):
 
 
 class UpdateProgressGoal(BaseModel):
-    progress_steps: Optional[int]
+    progress_steps: int
 
 
 class UpdateGoalState(BaseModel):

@@ -6,8 +6,8 @@ services:
     volumes:
       - ~/apps/mongo:/data/db
 
-  goals_microservice:
-    image: goals_microservice
+  goals-microservice:
+    image: goals-microservice
     build:
       context: .
       dockerfile: Dockerfile

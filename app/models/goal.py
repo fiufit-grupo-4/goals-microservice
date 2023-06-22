@@ -4,22 +4,29 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class GoalTypes(str, Enum):
+    KILOMETERS = "Kilometers"
+    STEPS = "Steps"
+    CALORIES = "Calories"
+
+
 class State(int, Enum):
     NOT_INIT = 1
     INIT = 2
     COMPLETE = 3
     STOP = 4
+    EXPIRED = 5
 
 
 class GoalCreate(BaseModel):
     training_id: Optional[str]
     title: str
     description: str
-    metric: str
-    quantity_steps: int
+    quantity_steps: float
+    metric: GoalTypes = GoalTypes.STEPS.value
     limit_time: Optional[datetime] = None
     date_init: Optional[datetime] = None
-    state: Optional[int] = State.INIT.value
+    state: Optional[int] = State.NOT_INIT.value
 
 
 class GoalResponse(BaseModel):
@@ -28,13 +35,13 @@ class GoalResponse(BaseModel):
     training_id: Optional[str]
     title: Optional[str]
     description: Optional[str]
-    metric: Optional[str]
+    metric: Optional[GoalTypes]
     limit_time: Optional[datetime]
     date_init: Optional[datetime]
     date_complete: Optional[datetime]
     state: Optional[int]
-    quantity_steps: Optional[int]
-    progress_steps: Optional[int]
+    quantity_steps: Optional[float]
+    progress_steps: Optional[float]
 
     @classmethod
     def from_mongo(cls, goal):
@@ -56,13 +63,13 @@ class GoalResponse(BaseModel):
 class UpdateGoal(BaseModel):
     title: Optional[str]
     description: Optional[str]
-    metric: Optional[str]
+    metric: Optional[GoalTypes]
     limit_time: Optional[datetime]
-    quantity_steps: Optional[int]
+    quantity_steps: Optional[float]
 
 
 class UpdateProgressGoal(BaseModel):
-    progress_steps: int
+    progress_steps: float
 
 
 class UpdateGoalState(BaseModel):
@@ -81,10 +88,10 @@ class Goal:
         training_id: Optional[str],
         title,
         description,
-        metric,
-        limit,
+        metric: GoalTypes = GoalTypes.STEPS.value,
         state: Optional[int] = State.NOT_INIT.value,
-        quantity_steps: Optional[int] = 0,
+        quantity_steps: Optional[float] = 0,
+        limit: Optional[datetime] = None,
         date_init: Optional[datetime] = None,
     ):
         self.user_id = user_id
@@ -97,4 +104,3 @@ class Goal:
         self.quantity_steps = quantity_steps
         self.progress_steps = 0
         self.date_init = date_init
-        self.date_complete = None

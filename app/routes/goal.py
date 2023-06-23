@@ -42,6 +42,14 @@ def send_push_notification(device_token, title, body):
         messaging.send(message)
 
 
+def send_wsp_notification(user_id, body, headers):
+    await ServiceUsers.post(
+        f'/users/{user_id}/goals/notifications',
+        json={"message": body},
+        headers={"authorization": headers["authorization"]},
+    )
+
+
 async def get_device_token(user_id):
     user = await ServiceUsers.get(f'users/{user_id}')
     if user.status_code == 200:
@@ -274,13 +282,22 @@ async def complete_goal(
 ):
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})
-    # token = await get_device_token(user_id)
-    # send_push_notification(device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!')
+
+    headers = request.headers
+    token = await get_device_token(user_id)
+
+    send_push_notification(
+        device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!'
+    )
+    send_wsp_notification(
+        user_id=user_id,
+        body=f'¡Meta {goal.title} cumplida, felicitaciones!',
+        headers=headers,
+    )
     await update_state_goal(id_goal, request, State.COMPLETE)
 
     training_id = goal['training_id']
     if training_id is not None:
-        headers = request.headers
         await ServiceTrainers.patch(
             f'/athletes/me/trainings/{training_id}/complete',
             json={},

@@ -44,7 +44,7 @@ def send_push_notification(device_token, title, body):
 
 def send_wsp_notification(user_id, body, headers):
     await ServiceUsers.post(
-        f'/users/{user_id}/goals/notifications',
+        f'/users/{user_id}/goal/notification',
         json={"message": body},
         headers={"authorization": headers["authorization"]},
     )

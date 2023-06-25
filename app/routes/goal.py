@@ -274,8 +274,6 @@ async def complete_goal(
 ):
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})
-    # token = await get_device_token(user_id)
-    # send_push_notification(device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!')
     await update_state_goal(id_goal, request, State.COMPLETE)
 
     training_id = goal['training_id']
@@ -284,6 +282,18 @@ async def complete_goal(
         await ServiceTrainers.patch(
             f'/athletes/me/trainings/{training_id}/complete',
             json={},
+            headers={"authorization": headers["authorization"]},
+        )
+        token = await get_device_token(user_id)
+        send_push_notification(device_token=token, title='Goal accomplished', body=f"Completaste la meta {goal['title']}")
+        await ServiceUsers.patch(
+            f'/users/{user_id}',
+            json={
+                "notifications": {
+                    "title": 'Goal accomplished',
+                    "body": f"Completaste la meta {goal['title']}",
+                }
+            },
             headers={"authorization": headers["authorization"]},
         )
 

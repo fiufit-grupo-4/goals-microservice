@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class GoalTypes(str, Enum):
@@ -25,14 +25,24 @@ class UserRoles(int, Enum):
 
 
 class GoalCreate(BaseModel):
-    training_id: Optional[str]
     title: str
     description: str
-    quantity_steps: float
+    quantity_steps: float = Field(1500, gt=0)
     metric: GoalTypes = GoalTypes.STEPS.value
+    training_id: Optional[str]
     limit_time: Optional[datetime] = None
     date_init: Optional[datetime] = None
     state: Optional[int] = State.NOT_INIT.value
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "title": "Nice goal",
+                "description": "Ready to walking",
+                "quantity_steps": 1500,
+                "metric": GoalTypes.STEPS.value,
+            }
+        }
 
 
 class GoalResponse(BaseModel):
@@ -91,12 +101,12 @@ class Goal:
     def __init__(
         self,
         user_id,
-        training_id: Optional[str],
         title,
         description,
         metric: GoalTypes = GoalTypes.STEPS.value,
-        state: Optional[int] = State.NOT_INIT.value,
         quantity_steps: Optional[float] = 0,
+        training_id: Optional[str] = None,
+        state: Optional[int] = State.NOT_INIT.value,
         limit: Optional[datetime] = None,
         date_init: Optional[datetime] = None,
     ):

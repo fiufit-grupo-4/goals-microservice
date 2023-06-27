@@ -6,13 +6,7 @@ from starlette.responses import JSONResponse
 from datetime import datetime, timezone
 import dateutil.parser as parser
 
-from app.models.goal import (
-    GoalCreate,
-    GoalResponse,
-    Goal,
-    UpdateGoal,
-    State,
-)
+from app.models.goal import GoalCreate, GoalResponse, Goal, UpdateGoal, State
 from app.auth.auth_utils import get_user_id, ObjectIdPydantic
 from app.config.config import logger
 
@@ -29,7 +23,6 @@ async def create_goal(
     # Crear un nuevo desafío en la base de datos
     new_goal = Goal(
         user_id=str(user_id),
-        training_id=goal.training_id,
         title=goal.title,
         description=goal.description,
         metric=goal.metric,
@@ -49,21 +42,16 @@ async def create_goal(
 
     if res_json["limit"] is not None:
         res_json["limit"] = parser.parse(res_json["limit"]).replace(tzinfo=timezone.utc)
-        if res_json["limit"] < time_now:
+        if res_json["limit"] > time_now:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content={"message": "Limit date is before current date"},
+                content={"message": "Limit date is after current date"},
             )
 
-    if res_json["date_init"] is not None:
+    if res_json["date_init"]:
         res_json["date_init"] = parser.parse(res_json["date_init"]).replace(
             tzinfo=timezone.utc
         )
-        if res_json["date_init"] < time_now:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"message": "Date init is before current date"},
-            )
 
     goal_id = goals.insert_one(res_json)
 

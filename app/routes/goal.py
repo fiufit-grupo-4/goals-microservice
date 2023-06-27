@@ -85,6 +85,27 @@ async def progress_steps_all_goal(
                 goal["state"] = State.COMPLETE
 
                 await complete_goal(request, goal["_id"])
+                print("----")
+                token = await get_device_token(str(user_id))
+                send_push_notification(
+                    device_token=token,
+                    title='Goal accomplished',
+                    body=f"Completaste la meta {goal['title']}",
+                )
+                response = await ServiceUsers.patch(
+                    f'users/{str(user_id)}',
+                    json={
+                        "notifications": {
+                            "title": 'Goal accomplished',
+                            "body": f"Completaste la meta {goal['title']}",
+                        }
+                    },
+                    headers={"authorization": request.headers["authorization"]},
+                )
+
+                print(response.status_code)
+                print(response.json())
+
         goals.update_one({"_id": goal["_id"]}, {"$set": goal})
 
     return {"message": "Goal updated successfully"}
@@ -271,19 +292,16 @@ async def complete_goal(
 ):
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})
-    # token = await get_device_token(user_id)
-    # send_push_notification(device_token=token, title='¡Meta cumplida!', body='¡Felicitaciones!')
     await update_state_goal(id_goal, request, State.COMPLETE)
+    headers = request.headers
 
     training_id = goal['training_id']
     if training_id is not None:
-        headers = request.headers
         await ServiceTrainers.patch(
             f'/athletes/me/trainings/{training_id}/complete',
             json={},
             headers={"authorization": headers["authorization"]},
         )
-
     return {"message": "Goal completed successfully"}
 
 

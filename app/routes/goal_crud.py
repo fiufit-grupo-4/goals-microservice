@@ -42,10 +42,10 @@ async def create_goal(
 
     if res_json["limit"] is not None:
         res_json["limit"] = parser.parse(res_json["limit"]).replace(tzinfo=timezone.utc)
-        if res_json["limit"] > time_now:
+        if res_json["limit"] < time_now:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content={"message": "Limit date is after current date"},
+                content={"message": "Limit date is before current date"},
             )
 
     if res_json["date_init"]:
@@ -125,31 +125,31 @@ async def update_goal(
     goals = request.app.database["goals"]
     goal = goals.find_one({"_id": id_goal})
 
-    time_now = datetime.now(timezone.utc)
-    if to_change["limit_time"] is not None:
-        to_change["limit_time"] = parser.parse(str(to_change["limit_time"])).replace(
-            tzinfo=timezone.utc
-        )
-        if to_change["limit_time"] < time_now:
-            logger.error(f"LIMIT TIME: {to_change['limit_time']} AND NOW: {time_now}")
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"message": "Limit date is before current date"},
-            )
-        to_change["limit"] = to_change["limit_time"]
-        to_change.pop("limit_time")
-
-        if goal["state"] == State.EXPIRED.value:
-            to_change["state"] = State.NOT_INIT.value
-            to_change["progress_steps"] = 0
-            to_change["date_init"] = None
-
     if not goal:
         logger.info(f'Goal {id_goal} not found to update')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=f'Goal {id_goal} not found',
+            content=f'Goal {id_goal} not found to update',
         )
+
+    time_now = datetime.now(timezone.utc)
+    if to_change.get("limit_time"):
+        to_change["limit_time"] = parser.parse(str(to_change["limit_time"])).replace(
+            tzinfo=timezone.utc
+        )
+        if to_change["limit_time"] < time_now:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"message": "Limit date is before current date"},
+            )
+
+        to_change["limit"] = to_change["limit_time"]
+        to_change.pop("limit_time")
+
+    if goal["state"] == State.EXPIRED.value:
+        to_change["state"] = State.NOT_INIT.value
+        to_change["progress_steps"] = 0
+        to_change["date_init"] = None
 
     goals.update_one({"_id": id_goal}, {"$set": to_change})
 

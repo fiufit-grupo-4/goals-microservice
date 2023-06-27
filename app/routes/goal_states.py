@@ -144,7 +144,7 @@ async def update_state_goal(id_goal, request, state):
         logger.info(f'Goal state {id_goal} not found to update')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content=f'Goal state {id_goal} not found',
+            content=f'Goal {id_goal} not found',
         )
     logger.info(f'Updating goal state: {state.name}')
 
@@ -157,12 +157,12 @@ async def update_state_goal(id_goal, request, state):
         result_update = goals.update_one(
             {"_id": goal["_id"]}, {"$set": {"state": State.EXPIRED.value}}
         )
-    elif state == State.INIT.value:
+    elif state == State.INIT.value and goal["state"] != State.INIT.value:
         logger.info('Updating goal state to INIT')
         result_update = goals.update_one(
             {"_id": id_goal}, {"$set": {"date_init": now_time, "state": state}}
         )
-    elif state == State.COMPLETE.value:
+    elif state == State.COMPLETE.value and goal["state"] != State.COMPLETE.value:
         logger.info('Updating goal state to COMPLETE')
         result_update = goals.update_one(
             {"_id": id_goal}, {"$set": {"date_complete": now_time, "state": state}}

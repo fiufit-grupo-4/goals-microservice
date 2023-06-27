@@ -16,7 +16,6 @@ client = TestClient(app)
 athlete_id_example_mock_1 = str(ObjectId())
 access_token_athlete_example_mock_1 = generate_token_with_role(athlete_id_example_mock_1, UserRoles.ATLETA)
 
-# Mock users
 goal_mock_1 = {
     "title": "Alta meta",
     "description": "La mejor meta papá",
@@ -128,7 +127,7 @@ def test_get_especific_goal(mongo_mock):
     assert response.json()["description"] == "This is a test of Goal Step"
     
 
-def test_get_especific_goal_ineexistent(mongo_mock):
+def test_get_especific_goal_inexistent(mongo_mock):
     response = client.post("/athletes/me/goals/", 
                            json={"title": "Test Goal Steps",
                                  "description": "This is a test of Goal Step",
@@ -160,7 +159,7 @@ def test_delete_goal(mongo_mock):
     assert response.status_code == 200
     assert len(response.json()) == 1
     
-def test_delete_goal_ineexistent(mongo_mock):
+def test_delete_goal_inexistent(mongo_mock):
     response = client.delete("/athletes/me/goals/" + athlete_id_example_mock_1, headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
     assert response.status_code == 404
     assert response.json() == f"Goal {athlete_id_example_mock_1} not found to delete"
@@ -254,3 +253,4 @@ def test_patch_goal_expired_then_resets_the_goal(mongo_mock):
     response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
     assert response.json()["state"] == State.NOT_INIT.value
     assert response.json()["date_init"] is None
+    

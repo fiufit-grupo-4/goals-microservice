@@ -18,6 +18,7 @@ from app.config.config import logger
 
 router_goal_crud = APIRouter()
 
+
 @router_goal_crud.post("/", response_model=GoalResponse)
 async def create_goal(
     request: Request,
@@ -118,6 +119,7 @@ async def get_goal(id_goal: ObjectIdPydantic, request: Request):
             status_code=status.HTTP_404_NOT_FOUND,
             content=f'Goal {id_goal} not found to get',
         )
+
 
 @router_goal_crud.patch("/{id_goal}", status_code=status.HTTP_200_OK)
 async def update_goal(

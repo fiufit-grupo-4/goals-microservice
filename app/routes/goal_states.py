@@ -17,6 +17,7 @@ from app.services.services import ServiceUsers, ServiceTrainers
 
 router_goal_states = APIRouter()
 
+
 def step_to_calorie(step):
     calories = step * 0.04
     return calories

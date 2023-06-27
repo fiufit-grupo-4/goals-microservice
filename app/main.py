@@ -10,6 +10,7 @@ from app.routes.urls import api_router
 app = FastAPI()
 firebase_admin.initialize_app(credentials.Certificate(firebase_credentials))
 
+
 @app.on_event("startup")
 async def startup_db_client():
     try:
@@ -22,9 +23,11 @@ async def startup_db_client():
     app.logger = logger
     app.database = app.mongodb_client["goals_microservice"]
 
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     app.mongodb_client.close()
     logger.info("Shutdown APP")
+
 
 app.include_router(api_router)

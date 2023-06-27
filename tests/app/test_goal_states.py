@@ -136,3 +136,106 @@ def test_starting_goal_with_limit_time_expired_returns_ok_but_goal_is_set_to_exp
     assert response.json()["state"] == State.EXPIRED.value
 
 
+def test_stop_goal_not_init_returns_error(mongo_mock):
+    response = client.post("/athletes/me/goals/", 
+                           json={"title": "Test Goal Steps",
+                                 "description": "This is a test of Goal Step",
+                                 "metric": GoalTypes.STEPS.value,
+                                 "quantity_steps": 1500},
+                           headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    goal_id = response.json()["id"]
+    
+    response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.NOT_INIT.value
+    assert response.json()["date_init"] is None
+    
+    response = client.patch(f"/athletes/me/goals/{goal_id}/stop", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 400
+    assert response.json() == f"Goal {goal_id} not started"
+    
+def test_stop_goal_started_then_is_setted_stop(mongo_mock):
+    response = client.post("/athletes/me/goals/", 
+                           json={"title": "Test Goal Steps",
+                                 "description": "This is a test of Goal Step",
+                                 "metric": GoalTypes.STEPS.value,
+                                 "quantity_steps": 1500},
+                           headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    goal_id = response.json()["id"]
+    
+    response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.NOT_INIT.value
+    assert response.json()["date_init"] is None
+    
+    response = client.patch(f"/athletes/me/goals/{goal_id}/start", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    
+    response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.INIT.value
+    assert response.json()["date_init"] is not None
+    
+    response = client.patch(f"/athletes/me/goals/{goal_id}/stop", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    
+    response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.STOP.value
+    
+
+def test_stop_goal_stopped_returns_error(mongo_mock):
+    response = client.post("/athletes/me/goals/", 
+                           json={"title": "Test Goal Steps",
+                                 "description": "This is a test of Goal Step",
+                                 "metric": GoalTypes.STEPS.value,
+                                 "quantity_steps": 1500},
+                           headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    goal_id = response.json()["id"]
+    
+    response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.NOT_INIT.value
+    assert response.json()["date_init"] is None
+    
+    response = client.patch(f"/athletes/me/goals/{goal_id}/start", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    
+    response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.INIT.value
+    assert response.json()["date_init"] is not None
+    
+    response = client.patch(f"/athletes/me/goals/{goal_id}/stop", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    
+    response = client.get(f"/athletes/me/goals/{goal_id}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.STOP.value
+
+    response = client.patch(f"/athletes/me/goals/{goal_id}/stop", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 400
+    
+    
+def test_stop_goal_completed_returns_error(mongo_mock):
+    database = app.database.get_collection("goals")
+    goal_id = database.insert_one({"title": "Test Goal Steps", 
+                                   "description": "This is a test of Goal Step", 
+                                   "metric": GoalTypes.STEPS.value, 
+                                   "progress_steps": 1502,
+                                   "quantity_steps": 1500, 
+                                   "limit" : None,
+                                   "date_init": datetime.now(timezone.utc) - timedelta(days=2), 
+                                   "date_complete": datetime.now(timezone.utc) - timedelta(days=1), 
+                                   "state": State.COMPLETE.value}).inserted_id
+
+    response = client.get(f"/athletes/me/goals/{str(goal_id)}", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 200
+    assert response.json()["state"] == State.COMPLETE.value    
+    
+    response = client.patch(f"/athletes/me/goals/{goal_id}/stop", headers={"Authorization": f"Bearer {access_token_athlete_example_mock_1}"})
+    assert response.status_code == 400
+    assert response.json() == f"Goal {goal_id} already completed"

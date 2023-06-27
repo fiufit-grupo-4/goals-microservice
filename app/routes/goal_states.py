@@ -134,6 +134,7 @@ async def complete_goal(
 
 @router_goal_states.patch("/{id_goal}/stop", status_code=status.HTTP_200_OK)
 async def stop_goal(request: Request, id_goal: ObjectIdPydantic):
+
     return await update_state_goal(id_goal, request, State.STOP)
 
 
@@ -162,10 +163,20 @@ async def update_state_goal(id_goal, request, state):
         result_update = goals.update_one(
             {"_id": id_goal}, {"$set": {"date_init": now_time, "state": state}}
         )
+    elif state == State.STOP.value and goal["state"] == State.COMPLETE.value:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=f'Goal {id_goal} already completed',
+        )
     elif state == State.COMPLETE.value and goal["state"] != State.COMPLETE.value:
         logger.info('Updating goal state to COMPLETE')
         result_update = goals.update_one(
             {"_id": id_goal}, {"$set": {"date_complete": now_time, "state": state}}
+        )
+    elif state == State.STOP.value and goal["state"] == State.NOT_INIT.value:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=f'Goal {id_goal} not started',
         )
     else:
         logger.info(f'Updating goal state to {state}')

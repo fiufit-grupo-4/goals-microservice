@@ -2,10 +2,9 @@ import jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer
 from app.auth.auth_bearer import JWTBearer
-from app.config import get_settings
+from app.config.config import get_settings
 from bson import ObjectId
 
-from app.main import logger
 
 oauth2_scheme = HTTPBearer()
 

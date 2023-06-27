@@ -24,6 +24,24 @@ class ServiceUsers:
                 detail='User service cannot be accessed',
             )
 
+    @staticmethod
+    async def patch(path, json, headers):
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.patch(
+                        f"{USER_SERVICE_URL}{path}",
+                        json=json,
+                        headers=headers,
+                    )
+                    return response
+            except Exception:
+                main.logger.error('User service cannot be accessed')
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail='User service cannot be accessed',
+                )
+
+
 
 class ServiceTrainers:
     @staticmethod

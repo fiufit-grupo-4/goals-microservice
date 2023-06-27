@@ -18,6 +18,12 @@ class State(int, Enum):
     EXPIRED = 5
 
 
+class UserRoles(int, Enum):
+    ADMIN = 1
+    TRAINER = 2
+    ATLETA = 3
+
+
 class GoalCreate(BaseModel):
     training_id: Optional[str]
     title: str

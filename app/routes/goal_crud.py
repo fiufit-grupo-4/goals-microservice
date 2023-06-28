@@ -153,7 +153,7 @@ async def update_goal(
 
     goals.update_one({"_id": id_goal}, {"$set": to_change})
 
-    return {"message": "Goal updated successfully"}
+    return {"message": "All goals have been successfully updated"}
 
 
 @router_goal_crud.delete("/{id_goal}", status_code=status.HTTP_200_OK)

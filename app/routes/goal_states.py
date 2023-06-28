@@ -114,12 +114,10 @@ async def update_state_goal(id_goal, request, state):
         goal["limit"] is not None
         and parser.parse(str(goal["limit"])).replace(tzinfo=timezone.utc) < now_time
     ):
-        logger.info('Updating goal state to EXPIRED')
         result_update = goals.update_one(
             {"_id": goal["_id"]}, {"$set": {"state": State.EXPIRED.value}}
         )
     elif state == State.INIT.value and goal["state"] != State.INIT.value:
-        logger.info('Updating goal state to INIT')
         result_update = goals.update_one(
             {"_id": id_goal}, {"$set": {"date_init": now_time, "state": state}}
         )
@@ -129,7 +127,6 @@ async def update_state_goal(id_goal, request, state):
             content=f'Goal {id_goal} already completed',
         )
     elif state == State.COMPLETE.value and goal["state"] != State.COMPLETE.value:
-        logger.info('Updating goal state to-> COMPLETE')
         result_update = goals.update_one(
             {"_id": id_goal}, {"$set": {"date_complete": now_time, "state": state}}
         )
@@ -139,11 +136,10 @@ async def update_state_goal(id_goal, request, state):
             content=f'Goal {id_goal} not started',
         )
     else:
-        logger.info(f'Updating goal state to {state}')
         result_update = goals.update_one({"_id": id_goal}, {"$set": {"state": state}})
 
     if result_update.modified_count > 0:
-        logger.info('Updating goal state successfully')
+        logger.info(f'Updating goal {id_goal} to state {state} successfully')
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=f'Goal state {id_goal} updated successfully',

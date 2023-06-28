@@ -3,7 +3,7 @@ from logging.config import dictConfig
 from os import environ
 from pydantic import BaseSettings
 
-from app.log_config import logconfig
+from app.config.log_config import logconfig
 
 dictConfig(logconfig)
 logger = logging.getLogger('app')

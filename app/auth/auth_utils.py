@@ -1,13 +1,19 @@
+from os import environ
 import jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer
 from app.auth.auth_bearer import JWTBearer
-from app.config import get_settings
+from app.config.config import get_settings
+from app.models.goal import UserRoles
 from bson import ObjectId
 
-from app.main import logger
+from datetime import timedelta, datetime
 
 oauth2_scheme = HTTPBearer()
+RESET_PASSWORD_EXPIRATION_MINUTES = environ.get("RESET_PASSWORD_EXPIRATION_MINUTES", 60)
+EXPIRES = timedelta(minutes=int(RESET_PASSWORD_EXPIRATION_MINUTES))
+JWT_SECRET = environ.get("JWT_SECRET", "123456")
+JWT_ALGORITHM = environ.get("JWT_ALGORITHM", "HS256")
 
 
 class ObjectIdPydantic(str):
@@ -37,3 +43,11 @@ def get_user_id(token: str = Depends(JWTBearer())) -> ObjectId:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token"
         )
+
+
+def generate_token_with_role(id: str, role: UserRoles) -> str:
+    utcnow = datetime.utcnow()
+    expires = utcnow + EXPIRES
+    token_data = {"id": id, "exp": expires, "iat": utcnow, "role": role}
+    token = jwt.encode(token_data, key=JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return token

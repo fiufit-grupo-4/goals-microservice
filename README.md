@@ -2,6 +2,12 @@
 
 [![codecov](https://codecov.io/gh/fiufit-grupo-4/goals-microservice/branch/main/graph/badge.svg?token=LhOJKiy6To)](https://codecov.io/gh/fiufit-grupo-4/goals-microservice) [![Dev Checks](https://github.com/fiufit-grupo-4/base-microservice/actions/workflows/dev-checks.yml/badge.svg)](https://github.com/fiufit-grupo-4/base-microservice/actions/workflows/dev-checks.yml)
 
+This microservice is responsible for managing the goals of the system's athlete users. It has the basic CRUD of a goal as such, and also has the functionality to start, stop and progress the different goals of an athlete.
+
+# Documentation
+
+The link to the API documentation of this microservice can be found in the corresponding Swagger: [API Documentation - Goals Microservice](https://goals-service-fiufit.herokuapp.com/docs)
+
 # Docker
 
 ### Build container:
@@ -11,10 +17,6 @@
 ### Start services:
 
 ```$ docker-compose up```
-
-### List images:
-
-```$ docker images```
 
 ### Remove dangling images: 
 

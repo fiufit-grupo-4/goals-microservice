@@ -1,19 +1,15 @@
-from os import environ
 import jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer
 from app.auth.auth_bearer import JWTBearer
-from app.config.config import get_settings
+from app.config.config import Settings
 from app.models.goal import UserRoles
 from bson import ObjectId
 
-from datetime import timedelta, datetime
+from datetime import datetime
 
 oauth2_scheme = HTTPBearer()
-RESET_PASSWORD_EXPIRATION_MINUTES = environ.get("RESET_PASSWORD_EXPIRATION_MINUTES", 60)
-EXPIRES = timedelta(minutes=int(RESET_PASSWORD_EXPIRATION_MINUTES))
-JWT_SECRET = environ.get("JWT_SECRET", "123456")
-JWT_ALGORITHM = environ.get("JWT_ALGORITHM", "HS256")
+app_settings = Settings()
 
 
 class ObjectIdPydantic(str):
@@ -34,9 +30,8 @@ class ObjectIdPydantic(str):
 
 def get_user_id(token: str = Depends(JWTBearer())) -> ObjectId:
     try:
-        settings = get_settings()
         payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=settings.jwt_algorithm
+            token, app_settings.JWT_SECRET, algorithms=app_settings.JWT_ALGORITHM
         )
         return ObjectId(payload["id"])
     except Exception:
@@ -47,7 +42,9 @@ def get_user_id(token: str = Depends(JWTBearer())) -> ObjectId:
 
 def generate_token_with_role(id: str, role: UserRoles) -> str:
     utcnow = datetime.utcnow()
-    expires = utcnow + EXPIRES
+    expires = utcnow + app_settings.EXPIRES
     token_data = {"id": id, "exp": expires, "iat": utcnow, "role": role}
-    token = jwt.encode(token_data, key=JWT_SECRET, algorithm=JWT_ALGORITHM)
+    token = jwt.encode(
+        token_data, key=app_settings.JWT_SECRET, algorithm=app_settings.JWT_ALGORITHM
+    )
     return token

@@ -1,20 +1,15 @@
-from datetime import datetime, timedelta, timezone
+import mongomock
+import pytest
 
+from datetime import datetime, timedelta, timezone
 from fastapi import Response
 from app.auth.auth_utils import generate_token_with_role
 from app.models.goal import GoalTypes, State, UserRoles
-from dotenv import load_dotenv
-
-import dateutil.parser as parser
-
 from app.routes.goal_states import step_to_calorie, step_to_kilometer
-load_dotenv()
-import mongomock
-import pytest
 from bson import ObjectId
 from fastapi.testclient import TestClient
 from app.main import app, logger
-# TEST
+
 client = TestClient(app)
 
 athlete_id_example_mock_1 = str(ObjectId())

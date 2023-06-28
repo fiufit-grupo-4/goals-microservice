@@ -2,7 +2,6 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, Request
 from starlette import status
 from starlette.responses import JSONResponse
-from firebase_admin import messaging
 from datetime import datetime, timezone
 import dateutil.parser as parser
 
@@ -13,7 +12,7 @@ from app.models.goal import (
     UpdateProgressGoal,
 )
 from app.auth.auth_utils import get_user_id, ObjectIdPydantic
-from app.services.services import NotificationService, ServiceUsers, ServiceTrainers
+from app.services.services import NotificationService, ServiceTrainers
 
 router_goal_states = APIRouter()
 

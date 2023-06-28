@@ -1,20 +1,16 @@
-import firebase_admin
 from fastapi import FastAPI
 import pymongo
-from os import environ
-from firebase_admin import credentials
-from app.config.credentials import firebase_credentials
-from app.config.config import logger
+from app.config.config import logger, Settings
 from app.routes.urls import api_router
 
 app = FastAPI()
-firebase_admin.initialize_app(credentials.Certificate(firebase_credentials))
+app_settings = Settings()
 
 
 @app.on_event("startup")
 async def startup_db_client():
     try:
-        app.mongodb_client = pymongo.MongoClient(environ["MONGODB_URI"])
+        app.mongodb_client = pymongo.MongoClient(app_settings.MONGODB_URI)
         logger.info("Connected successfully MongoDB")
     except Exception as e:
         logger.error(e)
